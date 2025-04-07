@@ -1,42 +1,48 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronRight, FiChevronLeft } from 'react-icons/fi';
-import toast from 'react-hot-toast';
-import { resumeSchema } from '@/lib/validations/resume';
-import PersonalInfoForm from '@/components/forms/PersonalInfoForm';
-import ExperienceForm from '@/components/forms/ExperienceForm';
-import EducationForm from '@/components/forms/EducationForm';
-import SkillsForm from '@/components/forms/SkillsForm';
-import ResumePreview from '@/components/ResumePreview';
-import { ResumeData } from '@/types';
-import { generatePDF } from '@/lib/generatePdf';
-import ClassicTemplate from '@/components/templates/ClassicTemplate';
-import ModernTemplate from '@/components/templates/ModernTemplate';
-import MinimalTemplate from '@/components/templates/MinimalTemplate';
-import TechnicalTemplate from '@/components/templates/TechnicalTemplate';
-import { useResumeState } from '@/hooks/useResumeState';
+import { useState, useEffect } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import toast from "react-hot-toast";
+import { resumeSchema } from "@/lib/validations/resume";
+import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
+import ExperienceForm from "@/components/forms/ExperienceForm";
+import EducationForm from "@/components/forms/EducationForm";
+import SkillsForm from "@/components/forms/SkillsForm";
+import ResumePreview from "@/components/ResumePreview";
+import { ResumeData } from "@/types";
+import { generatePDF } from "@/lib/generatePdf";
+import ClassicTemplate from "@/components/templates/ClassicTemplate";
+import ModernTemplate from "@/components/templates/ModernTemplate";
+import MinimalTemplate from "@/components/templates/MinimalTemplate";
+import TechnicalTemplate from "@/components/templates/TechnicalTemplate";
+import ProfessionalTemplate from "@/components/templates/ProfessionalTemplate";
+import CreativeTemplate from "@/components/templates/CreativeTemplate";
+import ExecutiveTemplate from "@/components/templates/ExecutiveTemplate";
+import { useResumeState } from "@/hooks/useResumeState";
 
 const templates = {
   classic: ClassicTemplate,
   modern: ModernTemplate,
   minimal: MinimalTemplate,
   technical: TechnicalTemplate,
+  professional: ProfessionalTemplate,
+  creative: CreativeTemplate,
+  executive: ExecutiveTemplate,
 };
 
 const formSteps = [
-  { id: 'personal', title: 'Personal Info', component: PersonalInfoForm },
-  { id: 'experience', title: 'Experience', component: ExperienceForm },
-  { id: 'education', title: 'Education', component: EducationForm },
-  { id: 'skills', title: 'Skills', component: SkillsForm },
+  { id: "personal", title: "Personal Info", component: PersonalInfoForm },
+  { id: "experience", title: "Experience", component: ExperienceForm },
+  { id: "education", title: "Education", component: EducationForm },
+  { id: "skills", title: "Skills", component: SkillsForm },
 ];
 
 export default function Builder() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState('technical');
+  const [selectedTemplate, setSelectedTemplate] = useState("professional");
   const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -51,7 +57,7 @@ export default function Builder() {
   const methods = useForm<ResumeData>({
     resolver: zodResolver(resumeSchema),
     defaultValues: resumeData,
-    mode: 'all',
+    mode: "all",
   });
 
   // Update form when resumeData changes (on initial load)
@@ -61,7 +67,12 @@ export default function Builder() {
     }
   }, [isLoading, resumeData, methods]);
 
-  const { watch, handleSubmit, formState: { errors, isValid }, trigger } = methods;
+  const {
+    watch,
+    handleSubmit,
+    formState: { errors, isValid },
+    trigger,
+  } = methods;
   const formData = watch();
 
   // Save form data to localStorage whenever it changes
@@ -76,7 +87,7 @@ export default function Builder() {
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
-      if (type === 'change') {
+      if (type === "change") {
         methods.trigger(name as string);
       }
     });
@@ -97,14 +108,16 @@ export default function Builder() {
 
     switch (currentStep) {
       case 0: // Personal Info
-        fieldsToValidate = ['personalInfo.fullName', 'personalInfo.email'];
+        fieldsToValidate = ["personalInfo.fullName", "personalInfo.email"];
         break;
       case 1: // Experience
         fieldsToValidate = formData.experience.flatMap((_, index) => [
           `experience.${index}.title`,
           `experience.${index}.company`,
           `experience.${index}.startDate`,
-          ...(formData.experience[index].current ? [] : [`experience.${index}.endDate`]),
+          ...(formData.experience[index].current
+            ? []
+            : [`experience.${index}.endDate`]),
         ]);
         break;
       case 2: // Education
@@ -126,20 +139,24 @@ export default function Builder() {
 
     if (!stepValid) {
       const currentStepErrors = Object.entries(errors)
-        .filter(([key]) => fieldsToValidate.some(field => key.startsWith(field.split('.')[0])))
+        .filter(([key]) =>
+          fieldsToValidate.some((field) => key.startsWith(field.split(".")[0]))
+        )
         .map(([_, value]: [string, any]) => {
-          if (typeof value === 'object' && value !== null) {
+          if (typeof value === "object" && value !== null) {
             return Object.values(value)
               .map((err: any) => err?.message)
               .filter(Boolean)
-              .join(', ');
+              .join(", ");
           }
           return value?.message;
         })
         .filter(Boolean);
 
       if (currentStepErrors.length > 0) {
-        toast.error(`Please fix the following errors: ${currentStepErrors.join(', ')}`);
+        toast.error(
+          `Please fix the following errors: ${currentStepErrors.join(", ")}`
+        );
         return;
       }
     }
@@ -149,17 +166,19 @@ export default function Builder() {
       if (!formValid) {
         const errorMessages = Object.entries(errors)
           .map(([_, value]: [string, any]) => {
-            if (typeof value === 'object' && value !== null) {
+            if (typeof value === "object" && value !== null) {
               return Object.values(value)
                 .map((err: any) => err?.message)
                 .filter(Boolean)
-                .join(', ');
+                .join(", ");
             }
             return value?.message;
           })
           .filter(Boolean);
 
-        toast.error(`Please fix the following errors: ${errorMessages.join(', ')}`);
+        toast.error(
+          `Please fix the following errors: ${errorMessages.join(", ")}`
+        );
         return;
       }
       await handleSubmit(onSubmit)();
@@ -177,10 +196,10 @@ export default function Builder() {
       setIsGeneratingPDF(true);
       const doc = generatePDF(formData, selectedTemplate);
       doc.save(`resume-${selectedTemplate}.pdf`);
-      toast.success('Resume downloaded successfully!');
+      toast.success("Resume downloaded successfully!");
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Error generating PDF. Please try again.');
+      console.error("Error generating PDF:", error);
+      toast.error("Error generating PDF. Please try again.");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -190,15 +209,19 @@ export default function Builder() {
 
   if (showPreview) {
     return (
-      <ResumePreview
-        formData={formData}
-        onEdit={() => setShowPreview(false)}
-        onDownload={handleDownloadPDF}
-        onSave={() => {}}
-        isGeneratingPDF={isGeneratingPDF}
-        selectedTemplate={selectedTemplate}
-        onTemplateSelect={handleTemplateSelect}
-      />
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ResumePreview
+            formData={formData}
+            onEdit={() => setShowPreview(false)}
+            onDownload={handleDownloadPDF}
+            onSave={() => {}}
+            isGeneratingPDF={isGeneratingPDF}
+            selectedTemplate={selectedTemplate}
+            onTemplateSelect={handleTemplateSelect}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -212,14 +235,14 @@ export default function Builder() {
               <div
                 key={step.id}
                 className={`flex items-center ${
-                  index < formSteps.length - 1 ? 'flex-1' : ''
+                  index < formSteps.length - 1 ? "flex-1" : ""
                 }`}
               >
                 <div
                   className={`flex items-center justify-center w-8 h-8 rounded-full ${
                     index <= currentStep
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                   }`}
                 >
                   {index + 1}
@@ -228,8 +251,8 @@ export default function Builder() {
                   <div
                     className={`flex-1 h-0.5 mx-2 ${
                       index < currentStep
-                        ? 'bg-blue-600'
-                        : 'bg-gray-200 dark:bg-gray-700'
+                        ? "bg-blue-600"
+                        : "bg-gray-200 dark:bg-gray-700"
                     }`}
                   />
                 )}
@@ -242,8 +265,8 @@ export default function Builder() {
                 key={step.id}
                 className={`text-sm ${
                   index === currentStep
-                    ? 'text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 {step.title}
@@ -275,8 +298,8 @@ export default function Builder() {
                   onClick={handlePrevStep}
                   className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                     currentStep === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-400'
+                      ? "text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                      : "text-gray-700 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-400"
                   }`}
                   disabled={currentStep === 0}
                 >
@@ -289,7 +312,7 @@ export default function Builder() {
                   className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   {currentStep === formSteps.length - 1 ? (
-                    'Preview'
+                    "Preview"
                   ) : (
                     <>
                       Next
@@ -305,15 +328,15 @@ export default function Builder() {
           <div className="hidden lg:block sticky top-8 h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm space-y-6">
               {/* Template Selector */}
-              <div className="flex space-x-4 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 {Object.entries(templates).map(([id, _]) => (
                   <button
                     key={id}
                     onClick={() => handleTemplateSelect(id)}
                     className={`px-3 py-1 rounded-md text-sm font-medium ${
                       selectedTemplate === id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
                     {id.charAt(0).toUpperCase() + id.slice(1)}
@@ -322,11 +345,14 @@ export default function Builder() {
               </div>
 
               {/* Live Template Preview */}
-              <div className="transform scale-[0.6] origin-top bg-white rounded-lg shadow overflow-hidden">
-                {formData && formData.personalInfo && (() => {
-                  const SelectedTemplate = templates[selectedTemplate as keyof typeof templates];
-                  return <SelectedTemplate data={formData} />;
-                })()}
+              <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transform scale-[0.6] origin-top">
+                {formData &&
+                  formData.personalInfo &&
+                  (() => {
+                    const SelectedTemplate =
+                      templates[selectedTemplate as keyof typeof templates];
+                    return <SelectedTemplate data={formData} />;
+                  })()}
               </div>
             </div>
           </div>
