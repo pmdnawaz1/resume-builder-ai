@@ -5,7 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiChevronLeft } from "react-icons/fi";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { resumeSchema } from "@/lib/validations/resume";
 import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
 import ExperienceForm from "@/components/forms/ExperienceForm";
@@ -46,6 +46,8 @@ export default function Builder() {
   const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [isStepValid, setIsStepValid] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
     resumeData,
@@ -101,24 +103,32 @@ export default function Builder() {
   } = methods;
   const formData = watch();
   
-  // Save form data to Zustand store whenever it changes
+  // Save form data to Zustand store whenever it changes - more efficient approach
   useEffect(() => {
-    const subscription = watch((value) => {
-      if (value && initialReset) {
-        updateResumeData(value as ResumeData);
+    // Use a debounce to prevent too many store updates
+    const updateTimeout = setTimeout(() => {
+      if (initialReset && !isInitialLoad) {
+        console.log("Updating store with form data");
+        updateResumeData(formData as ResumeData);
       }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, updateResumeData, initialReset]);
+    }, 300);
+
+    return () => clearTimeout(updateTimeout);
+  }, [JSON.stringify(formData), updateResumeData, initialReset, isInitialLoad]);
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
-      if (type === "change") {
-        methods.trigger(name as any);
+      if (type === "change" && name) {
+        methods.trigger(name as any).then(() => {
+          // Validate silently when fields change - no toasts
+          validateStep(currentStep, false).then(valid => {
+            setIsStepValid(valid);
+          });
+        });
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch, methods]);
+  }, [watch, methods, currentStep]);
 
   const onSubmit = async (data: ResumeData) => {
     console.log("onSubmit called, setting showPreview to true");
@@ -135,96 +145,62 @@ export default function Builder() {
   };
 
   const handleNextStep = async () => {
-    const isLastStep = currentStep === formSteps.length - 1;
-    let fieldsToValidate: string[] = [];
-
-    switch (currentStep) {
-      case 0: // Personal Info
-        fieldsToValidate = ["personalInfo.fullName", "personalInfo.email"];
-        break;
-      case 1: // Experience
-        fieldsToValidate = formData.experience.flatMap((_, index) => [
-          `experience.${index}.title`,
-          `experience.${index}.company`,
-          `experience.${index}.startDate`,
-          ...(formData.experience[index].current
-            ? []
-            : [`experience.${index}.endDate`]),
-        ]);
-        break;
-      case 2: // Education
-        fieldsToValidate = formData.education.flatMap((_, index) => [
-          `education.${index}.degree`,
-          `education.${index}.school`,
-          `education.${index}.graduationDate`,
-        ]);
-        break;
-      case 3: // Skills
-        fieldsToValidate = formData.skills.flatMap((_, index) => [
-          `skills.${index}.category`,
-          `skills.${index}.items`,
-        ]);
-        break;
-    }
-
-    const stepValid = await trigger(fieldsToValidate as any);
-
-    if (!stepValid) {
-      // Get errors for the current step and display them
-      const currentStepErrors = Object.entries(errors)
-        .filter(([key]) =>
-          fieldsToValidate.some((field) => key.startsWith(field.split(".")[0]))
-        )
-        .map(([_, value]: [string, any]) => {
-          if (typeof value === "object" && value !== null) {
-            return Object.values(value)
-              .map((err: any) => err?.message)
-              .filter(Boolean)
-              .join(", ");
-          }
-          return value?.message;
-        })
-        .filter(Boolean);
-
-      if (currentStepErrors.length > 0) {
-        toast.error(
-          `Please fix the following errors: ${currentStepErrors.join(", ")}`
-        );
-        // Don't proceed to the next step when there are validation errors
+    console.log("handleNextStep called, current step:", currentStep);
+    
+    try {
+      // Don't proceed if the current step is not valid
+      if (!isStepValid) {
+        console.log("Step not valid, showing validation errors");
+        // Validate again to show the toast with errors
+        await validateStep(currentStep, true);
         return false;
       }
-    }
+      
+      const isLastStep = currentStep === formSteps.length - 1;
+      console.log("Is last step:", isLastStep);
 
-    // If this is the last step, validate entire form before showing preview
-    if (isLastStep) {
-      const formValid = await trigger();
-      if (!formValid) {
-        console.log("HEREEE")
-        const errorMessages = Object.entries(errors)
-          .map(([_, value]: [string, any]) => {
-            if (typeof value === "object" && value !== null) {
-              return Object.values(value)
-                .map((err: any) => err?.message)
-                .filter(Boolean)
-                .join(", ");
+      // If this is the last step and it's valid, show preview
+      if (isLastStep) {
+        console.log("Last step, validating entire form");
+        const formValid = await trigger();
+        console.log("Form valid:", formValid);
+        
+        if (!formValid) {
+          const errorMessages = Object.entries(errors)
+            .map(([key, value]: [string, any]) => {
+              console.log("Error key:", key);
+              if (typeof value === "object" && value !== null) {
+                return Object.values(value)
+                  .map((err: any) => err?.message)
+                  .filter(Boolean)
+                  .join(", ");
+              }
+              return value?.message;
+            })
+            .filter(Boolean);
+
+          toast.error(
+            `Please fix the following errors: ${errorMessages.join(", ")}`,
+            {
+              duration: 4000,
+              position: 'top-center',
             }
-            return value?.message;
-          })
-          .filter(Boolean);
-
-        toast.error(
-          `Please fix the following errors: ${errorMessages.join(", ")}`
-        );
-        return false;
+          );
+          return false;
+        }
+        console.log("Form is valid, setting showPreview to true");
+        setShowPreview(true);
+        return true;
+      } else {
+        // Only move to the next step if validation passed
+        console.log("Moving to next step");
+        setCurrentStep((prev) => Math.min(formSteps.length - 1, prev + 1));
+        return true;
       }
-      console.log("Form is valid, setting showPreview directly");
-      setShowPreview(true);
-      return true;
-    } else {
-      // Only move to the next step if validation passed
-      setCurrentStep((prev) => Math.min(formSteps.length - 1, prev + 1));
+    } catch (error) {
+      console.error("Error in handleNextStep:", error);
+      return false;
     }
-    return true;
   };
 
   const handleTemplateSelect = (template: string) => {
@@ -247,64 +223,105 @@ export default function Builder() {
 
   const CurrentStepComponent = formSteps[currentStep].component;
 
-  const validateStep = async (stepIndex: number) => {
+  const validateStep = async (stepIndex: number, showToast = true) => {
+    console.log("validateStep called for step:", stepIndex, "showToast:", showToast);
+    
+    // Skip validation during initial load
+    if (isInitialLoad) {
+      console.log("Initial load, skipping validation");
+      return true;
+    }
+
+    // Define validation fields based on current step
     let fieldsToValidate: string[] = [];
 
-    switch (stepIndex) {
-      case 0: // Personal Info
-        fieldsToValidate = ["personalInfo.fullName", "personalInfo.email"];
-        break;
-      case 1: // Experience
-        fieldsToValidate = formData.experience.flatMap((_, index) => [
-          `experience.${index}.title`,
-          `experience.${index}.company`,
-          `experience.${index}.startDate`,
-          ...(formData.experience[index].current
-            ? []
-            : [`experience.${index}.endDate`]),
-        ]);
-        break;
-      case 2: // Education
-        fieldsToValidate = formData.education.flatMap((_, index) => [
-          `education.${index}.degree`,
-          `education.${index}.school`,
-          `education.${index}.graduationDate`,
-        ]);
-        break;
-      case 3: // Skills
-        fieldsToValidate = formData.skills.flatMap((_, index) => [
-          `skills.${index}.category`,
-          `skills.${index}.items`,
-        ]);
-        break;
-    }
-
-    const stepValid = await trigger(fieldsToValidate as any);
-
-    if (!stepValid) {
-      const currentStepErrors = Object.entries(errors)
-        .filter(([key]) =>
-          fieldsToValidate.some((field) => key.startsWith(field.split(".")[0]))
-        )
-        .map(([_, value]: [string, any]) => {
-          if (typeof value === "object" && value !== null) {
-            return Object.values(value)
-              .map((err: any) => err?.message)
-              .filter(Boolean)
-              .join(", ");
-          }
-          return value?.message;
-        })
-        .filter(Boolean);
-
-      if (currentStepErrors.length > 0) {
-        toast.error(
-          `Please fix the following errors: ${currentStepErrors.join(", ")}`
-        );
+    try {
+      switch (stepIndex) {
+        case 0: // Personal Info
+          fieldsToValidate = ["personalInfo.fullName", "personalInfo.email"];
+          break;
+        case 1: // Experience
+          fieldsToValidate = formData.experience.flatMap((_, index) => [
+            `experience.${index}.title`,
+            `experience.${index}.company`,
+            `experience.${index}.startDate`,
+            ...(formData.experience[index].current
+              ? []
+              : [`experience.${index}.endDate`]),
+          ]);
+          break;
+        case 2: // Education
+          fieldsToValidate = formData.education.flatMap((_, index) => [
+            `education.${index}.degree`,
+            `education.${index}.school`,
+            `education.${index}.graduationDate`,
+          ]);
+          break;
+        case 3: // Skills
+          fieldsToValidate = formData.skills.flatMap((_, index) => [
+            `skills.${index}.category`,
+            `skills.${index}.items`,
+          ]);
+          break;
       }
-    }
 
-    return stepValid;
+      console.log("Validating fields:", fieldsToValidate);
+      
+      // Use timeout to prevent infinite validation
+      const triggerPromise = trigger(fieldsToValidate as any);
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          console.log("Validation timeout reached");
+          resolve(true); // Default to valid if timeout occurs
+        }, 2000); // 2 second timeout
+      });
+      
+      // Race between validation and timeout
+      const stepValid = await Promise.race([triggerPromise, timeoutPromise]);
+      console.log("Step valid result:", stepValid);
+      
+      setIsStepValid(stepValid);
+
+      if (!stepValid && showToast) {
+        const currentStepErrors = Object.entries(errors)
+          .filter(([key]) =>
+            fieldsToValidate.some((field) => key.startsWith(field.split(".")[0]))
+          )
+          .map(([key, value]: [string, any]) => {
+            console.log("Error for key:", key, value);
+            if (typeof value === "object" && value !== null) {
+              return Object.values(value)
+                .map((err: any) => err?.message)
+                .filter(Boolean)
+                .join(", ");
+            }
+            return value?.message;
+          })
+          .filter(Boolean);
+
+        if (currentStepErrors.length > 0) {
+          console.log("Showing toast with errors:", currentStepErrors);
+          toast.error(
+            `Please fix the following errors: ${currentStepErrors.join(", ")}`,
+            {
+              duration: 4000,
+              position: 'top-center',
+              style: {
+                background: '#f44336',
+                color: '#fff',
+                padding: '16px',
+                borderRadius: '8px',
+              },
+            }
+          );
+        }
+      }
+
+      return stepValid;
+    } catch (error) {
+      console.error("Error in validateStep:", error);
+      return true; // Default to valid if validation fails
+    }
   };
 
   // Add debug function to check localStorage
@@ -313,6 +330,45 @@ export default function Builder() {
     console.log('LocalStorage data:', storedData ? JSON.parse(storedData) : 'No data found');
     setShowDebug(!showDebug);
   };
+
+  // Add effect to validate the current step when it changes
+  useEffect(() => {
+    // Only validate when step changes, not on every formData update
+    if (!isInitialLoad) {
+      console.log("Validating after step/form change");
+      // Only validate silently (without toasts) during normal navigation
+      validateStep(currentStep, false).then(valid => {
+        setIsStepValid(valid);
+      });
+    }
+  }, [currentStep]);  // Remove formData dependency to prevent too many validations
+  
+  // Separate effect for form data changes
+  useEffect(() => {
+    const debouncedValidation = setTimeout(() => {
+      if (!isInitialLoad) {
+        console.log("Validating after form data change");
+        validateStep(currentStep, false).then(valid => {
+          setIsStepValid(valid);
+        });
+      }
+    }, 500);  // Debounce validation to prevent hammering
+    
+    return () => clearTimeout(debouncedValidation);
+  }, [JSON.stringify(formData)]); // Only run when formData changes, and use stringify to deep compare
+
+  // After initial setup is complete
+  useEffect(() => {
+    if (initialReset) {
+      // After first reset, consider initialization complete
+      const initTimer = setTimeout(() => {
+        console.log("Initial load complete");
+        setIsInitialLoad(false);
+      }, 1000);  // Increased to ensure everything is loaded
+      
+      return () => clearTimeout(initTimer);
+    }
+  }, [initialReset]);
 
   if (showPreview) {
     console.log("Rendering ResumePreview with template:", selectedTemplate);
@@ -338,44 +394,34 @@ export default function Builder() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      {/* Debug button */}
-      <div className="p-2 text-right">
-        <button
-          onClick={checkLocalStorage}
-          className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md"
-        >
-          Debug Storage
-        </button>
-        {showDebug && (
-          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs overflow-auto max-h-40">
-            <pre>{JSON.stringify(resumeData, null, 2)}</pre>
-          </div>
-        )}
-      </div>
-
+      {/* Add Toaster component */}
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }}
+      />
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Debug Preview Toggle */}
-        <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-          <p className="text-sm font-medium mb-2">Debug Controls:</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className="px-3 py-1 bg-green-600 text-white text-sm rounded"
-            >
-              Show Preview
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowPreview(false)}
-              className="px-3 py-1 bg-red-600 text-white text-sm rounded"
-            >
-              Hide Preview
-            </button>
-            <span className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-sm rounded">
-              Current State: {showPreview ? "Show" : "Hide"}
-            </span>
-          </div>
+        {/* Debug button */}
+        <div className="text-right mb-4">
+          <button
+            onClick={checkLocalStorage}
+            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md"
+          >
+            Debug Storage
+          </button>
+          {showDebug && (
+            <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs overflow-auto max-h-40">
+              <pre>{JSON.stringify(resumeData, null, 2)}</pre>
+            </div>
+          )}
         </div>
         
         {/* Progress Steps */}
@@ -392,7 +438,7 @@ export default function Builder() {
                   type="button"
                   onClick={async () => {
                     // Validate current step before allowing navigation
-                    const currentStepValid = await validateStep(currentStep);
+                    const currentStepValid = await validateStep(currentStep, index > currentStep);
                     if (!currentStepValid && index > currentStep) {
                       return;
                     }
@@ -450,7 +496,7 @@ export default function Builder() {
                 </motion.div>
               </AnimatePresence>
 
-              {/* Navigation Buttons - Moved to bottom */}
+              {/* Navigation Buttons */}
               <div className="flex justify-between mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
@@ -468,7 +514,12 @@ export default function Builder() {
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={!isStepValid}
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    isStepValid
+                      ? "bg-blue-600 text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      : "bg-gray-400 text-white cursor-not-allowed"
+                  }`}
                 >
                   {currentStep === formSteps.length - 1 ? (
                     "Preview"
@@ -522,7 +573,7 @@ export default function Builder() {
               onClick={() => setShowPreview(true)}
               className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Preview Resume 111111
+              Preview Resume
             </button>
           </div>
         </div>
