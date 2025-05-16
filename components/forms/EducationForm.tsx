@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, Controller } from "react-hook-form";
 import { FiPlus, FiTrash2, FiAlertCircle } from "react-icons/fi";
 import { ResumeData } from "@/types";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FormInput, FormTextArea } from "@/components/ui";
+import { useResumeStore } from "@/lib/store";
 
 // Character and count limits
 const CHAR_LIMITS = {
-  DEGREE_MAX: 60,
-  SCHOOL_MAX: 60,
-  LOCATION_MAX: 50,
-  DESCRIPTION_MAX: 200,
+  DEGREE_MAX: 100,
+  SCHOOL_MAX: 100,
+  LOCATION_MAX: 100,
+  DESCRIPTION_MAX: 1000,
 };
 
 const COUNT_LIMITS = {
@@ -21,52 +22,16 @@ const COUNT_LIMITS = {
 
 export default function EducationForm() {
   const {
-    register,
     control,
     formState: { errors },
-    watch,
   } = useFormContext<ResumeData>();
+  
+  const { updateField } = useResumeStore();
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "education",
   });
-
-  const watchDegreeFields = fields.map(
-    (_, index) => watch(`education.${index}.degree`) || ""
-  );
-  const watchSchoolFields = fields.map(
-    (_, index) => watch(`education.${index}.school`) || ""
-  );
-  const watchLocationFields = fields.map(
-    (_, index) => watch(`education.${index}.location`) || ""
-  );
-  const watchDescriptionFields = fields.map(
-    (_, index) => watch(`education.${index}.description`) || ""
-  );
-
-  // Character count tracking
-  const [charCounts, setCharCounts] = useState({
-    degrees: Array(fields.length).fill(0),
-    schools: Array(fields.length).fill(0),
-    locations: Array(fields.length).fill(0),
-    descriptions: Array(fields.length).fill(0),
-  });
-
-  // Update character counts when fields change
-  useEffect(() => {
-    setCharCounts({
-      degrees: watchDegreeFields.map((degree) => degree.length),
-      schools: watchSchoolFields.map((school) => school.length),
-      locations: watchLocationFields.map((location) => location.length),
-      descriptions: watchDescriptionFields.map((desc) => desc.length),
-    });
-  }, [
-    watchDegreeFields,
-    watchSchoolFields,
-    watchLocationFields,
-    watchDescriptionFields,
-  ]);
 
   const formatDate = (date: Date | null) => {
     if (!date) return "";
@@ -152,104 +117,54 @@ export default function EducationForm() {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Degree */}
-              <div>
-                <label
-                  htmlFor={`education.${index}.degree`}
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Degree*
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    type="text"
-                    {...register(`education.${index}.degree`)}
-                    className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              <Controller
+                name={`education.${index}.degree`}
+                control={control}
+                render={({ field }) => (
+                  <FormInput
+                    id={`education.${index}.degree`}
+                    label="Degree"
+                    placeholder="Bachelor of Science in Computer Science"
+                    required
+                    maxLength={CHAR_LIMITS.DEGREE_MAX}
+                    storePath={`education.${index}.degree`}
+                    {...field}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span
-                      className={`text-xs ${
-                        charCounts.degrees[index] > CHAR_LIMITS.DEGREE_MAX
-                          ? "text-red-500"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {charCounts.degrees[index] || 0}/{CHAR_LIMITS.DEGREE_MAX}
-                    </span>
-                  </div>
-                </div>
-                {errors.education?.[index]?.degree && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-500">
-                    {errors.education[index]?.degree?.message}
-                  </p>
                 )}
-              </div>
+              />
 
               {/* School */}
-              <div>
-                <label
-                  htmlFor={`education.${index}.school`}
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  School*
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    type="text"
-                    {...register(`education.${index}.school`)}
-                    className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              <Controller
+                name={`education.${index}.school`}
+                control={control}
+                render={({ field }) => (
+                  <FormInput
+                    id={`education.${index}.school`}
+                    label="School"
+                    placeholder="University of California, Berkeley"
+                    required
+                    maxLength={CHAR_LIMITS.SCHOOL_MAX}
+                    storePath={`education.${index}.school`}
+                    {...field}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span
-                      className={`text-xs ${
-                        charCounts.schools[index] > CHAR_LIMITS.SCHOOL_MAX
-                          ? "text-red-500"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {charCounts.schools[index] || 0}/{CHAR_LIMITS.SCHOOL_MAX}
-                    </span>
-                  </div>
-                </div>
-                {errors.education?.[index]?.school && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-500">
-                    {errors.education[index]?.school?.message}
-                  </p>
                 )}
-              </div>
+              />
 
               {/* Location */}
-              <div>
-                <label
-                  htmlFor={`education.${index}.location`}
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Location
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    type="text"
-                    {...register(`education.${index}.location`)}
-                    className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              <Controller
+                name={`education.${index}.location`}
+                control={control}
+                render={({ field }) => (
+                  <FormInput
+                    id={`education.${index}.location`}
+                    label="Location"
+                    placeholder="Berkeley, CA"
+                    maxLength={CHAR_LIMITS.LOCATION_MAX}
+                    storePath={`education.${index}.location`}
+                    {...field}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span
-                      className={`text-xs ${
-                        charCounts.locations[index] > CHAR_LIMITS.LOCATION_MAX
-                          ? "text-red-500"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {charCounts.locations[index] || 0}/
-                      {CHAR_LIMITS.LOCATION_MAX}
-                    </span>
-                  </div>
-                </div>
-                {errors.education?.[index]?.location && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-500">
-                    {errors.education[index]?.location?.message}
-                  </p>
                 )}
-              </div>
+              />
 
               {/* Graduation Date */}
               <div>
@@ -259,65 +174,52 @@ export default function EducationForm() {
                 >
                   Graduation Date*
                 </label>
-                <Controller
-                  control={control}
-                  name={`education.${index}.graduationDate`}
-                  render={({ field: { onChange, value } }) => (
-                    <DatePicker
-                      selected={parseDate(value)}
-                      onChange={(date: Date) => onChange(formatDate(date))}
-                      dateFormat="yyyy-MM"
-                      showMonthYearPicker
-                      className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  )}
-                />
+                <div className="mt-1">
+                  <Controller
+                    control={control}
+                    name={`education.${index}.graduationDate`}
+                    render={({ field }) => (
+                      <DatePicker
+                        id={`education.${index}.graduationDate`}
+                        selected={parseDate(field.value)}
+                        onChange={(date) => {
+                          const formattedDate = formatDate(date);
+                          field.onChange(formattedDate);
+                          updateField(`education.${index}.graduationDate`, formattedDate || "");
+                        }}
+                        dateFormat="MM/yyyy"
+                        showMonthYearPicker
+                        className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholderText="MM/YYYY"
+                      />
+                    )}
+                  />
+                </div>
                 {errors.education?.[index]?.graduationDate && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-500">
                     {errors.education[index]?.graduationDate?.message}
                   </p>
                 )}
               </div>
+            </div>
 
-              {/* Description */}
-              <div className="col-span-2">
-                <label
-                  htmlFor={`education.${index}.description`}
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Description
-                </label>
-                <div className="mt-1 relative">
-                  <textarea
-                    {...register(`education.${index}.description`)}
-                    rows={3}
-                    className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Describe your achievements, relevant coursework, etc."
+            {/* Description */}
+            <div className="mt-6">
+              <Controller
+                name={`education.${index}.description`}
+                control={control}
+                render={({ field }) => (
+                  <FormTextArea
+                    id={`education.${index}.description`}
+                    label="Description"
+                    placeholder="Relevant coursework, achievements, or academic projects"
+                    maxLength={CHAR_LIMITS.DESCRIPTION_MAX}
+                    helperText="Brief description of your coursework, academic achievements, or relevant projects."
+                    storePath={`education.${index}.description`}
+                    {...field}
                   />
-                  <div className="absolute bottom-2 right-2">
-                    <span
-                      className={`text-xs ${
-                        charCounts.descriptions[index] >
-                        CHAR_LIMITS.DESCRIPTION_MAX
-                          ? "text-red-500"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {charCounts.descriptions[index] || 0}/
-                      {CHAR_LIMITS.DESCRIPTION_MAX}
-                    </span>
-                  </div>
-                </div>
-                {errors.education?.[index]?.description && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-500">
-                    {errors.education[index]?.description?.message}
-                  </p>
                 )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Optional. Keep it brief to ensure your resume fits on one
-                  page.
-                </p>
-              </div>
+              />
             </div>
           </div>
         ))}

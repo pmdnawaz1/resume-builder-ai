@@ -24,6 +24,13 @@ export default function ResumePreview({
   selectedTemplate,
   onTemplateSelect,
 }: ResumePreviewProps) {
+  console.log("ResumePreview component rendered");
+  console.log("Selected template:", selectedTemplate);
+  console.log("Form data summary:", {
+    name: formData?.personalInfo?.fullName,
+    templateSelected: selectedTemplate,
+  });
+  
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
