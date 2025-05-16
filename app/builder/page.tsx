@@ -10,10 +10,11 @@ import { resumeSchema } from "@/lib/validations/resume";
 import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
 import ExperienceForm from "@/components/forms/ExperienceForm";
 import EducationForm from "@/components/forms/EducationForm";
+import ProjectsForm from "@/components/forms/ProjectsForm";
 import SkillsForm from "@/components/forms/SkillsForm";
 import ResumePreview from "@/components/ResumePreview";
 import { ResumeData } from "@/types";
-import { generatePDF } from "@/lib/generatePdf";
+import { generatePDFFromHTML } from "@/lib/generateHtmlPdf";
 import ClassicTemplate from "@/components/templates/ClassicTemplate";
 import ModernTemplate from "@/components/templates/ModernTemplate";
 import MinimalTemplate from "@/components/templates/MinimalTemplate";
@@ -37,6 +38,7 @@ const formSteps = [
   { id: "personal", title: "Personal Info", component: PersonalInfoForm },
   { id: "experience", title: "Experience", component: ExperienceForm },
   { id: "education", title: "Education", component: EducationForm },
+  { id: "projects", title: "Projects", component: ProjectsForm },
   { id: "skills", title: "Skills", component: SkillsForm },
 ];
 
@@ -70,7 +72,7 @@ export default function Builder() {
       if (!initialReset) {
         // Wait a small delay to ensure localStorage is fully hydrated
         setTimeout(() => {
-          methods.reset(resumeData);
+      methods.reset(resumeData);
           setInitialReset(true);
           console.log("Form reset with hydrated data:", resumeData);
         }, 100);
@@ -102,7 +104,7 @@ export default function Builder() {
     trigger,
   } = methods;
   const formData = watch();
-  
+
   // Save form data to Zustand store whenever it changes - more efficient approach
   useEffect(() => {
     // Use a debounce to prevent too many store updates
@@ -160,26 +162,26 @@ export default function Builder() {
       console.log("Is last step:", isLastStep);
 
       // If this is the last step and it's valid, show preview
-      if (isLastStep) {
+    if (isLastStep) {
         console.log("Last step, validating entire form");
-        const formValid = await trigger();
+      const formValid = await trigger();
         console.log("Form valid:", formValid);
         
-        if (!formValid) {
-          const errorMessages = Object.entries(errors)
+      if (!formValid) {
+        const errorMessages = Object.entries(errors)
             .map(([key, value]: [string, any]) => {
               console.log("Error key:", key);
-              if (typeof value === "object" && value !== null) {
-                return Object.values(value)
-                  .map((err: any) => err?.message)
-                  .filter(Boolean)
-                  .join(", ");
-              }
-              return value?.message;
-            })
-            .filter(Boolean);
+            if (typeof value === "object" && value !== null) {
+              return Object.values(value)
+                .map((err: any) => err?.message)
+                .filter(Boolean)
+                .join(", ");
+            }
+            return value?.message;
+          })
+          .filter(Boolean);
 
-          toast.error(
+        toast.error(
             `Please fix the following errors: ${errorMessages.join(", ")}`,
             {
               duration: 4000,
@@ -210,9 +212,9 @@ export default function Builder() {
   const handleDownloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
-      const doc = generatePDF(formData, selectedTemplate);
-      doc.save(`resume-${selectedTemplate}.pdf`);
-      toast.success("Resume downloaded successfully!");
+      // The actual PDF generation will be handled in the ResumePreview component
+      // using the templateRef and html2pdf
+      toast.success("Resume downloading...");
     } catch (error) {
       console.error("Error generating PDF:", error);
       toast.error("Error generating PDF. Please try again.");
@@ -257,7 +259,12 @@ export default function Builder() {
             `education.${index}.graduationDate`,
           ]);
           break;
-        case 3: // Skills
+        case 3: // Projects
+          fieldsToValidate = formData.projects.flatMap((_, index) => [
+            `projects.${index}.name`,
+          ]);
+          break;
+        case 4: // Skills
           fieldsToValidate = formData.skills.flatMap((_, index) => [
             `skills.${index}.category`,
             `skills.${index}.items`,
@@ -266,6 +273,12 @@ export default function Builder() {
       }
 
       console.log("Validating fields:", fieldsToValidate);
+      
+      // Projects step is optional, so automatically pass validation if no projects
+      if (stepIndex === 3 && formData.projects.length === 0) {
+        console.log("Projects step is empty and optional, skipping validation");
+        return true;
+      }
       
       // Use timeout to prevent infinite validation
       const triggerPromise = trigger(fieldsToValidate as any);

@@ -9,6 +9,7 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
     personalInfo = {},
     experience = [],
     education = [],
+    projects = [],
     skills = [],
   } = data || {};
 
@@ -19,6 +20,9 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
         <h1 className="text-3xl font-bold mb-3 tracking-tight">
           {personalInfo.fullName || ""}
         </h1>
+        {personalInfo.title && (
+          <h2 className="text-xl text-blue-100 mb-4">{personalInfo.title}</h2>
+        )}
         <div className="flex flex-wrap gap-5 text-blue-50 text-sm">
           {personalInfo.email && (
             <div className="flex items-center">
@@ -78,6 +82,24 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
                 />
               </svg>
               {personalInfo.location}
+            </div>
+          )}
+          {personalInfo.website && (
+            <div className="flex items-center">
+              <svg
+                className="w-4 h-4 mr-2 opacity-90"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                />
+              </svg>
+              {personalInfo.website}
             </div>
           )}
         </div>
@@ -157,6 +179,91 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
                       {exp.description}
                     </p>
                   )}
+                  {exp.highlights && exp.highlights.length > 0 && (
+                    <ul className="list-disc list-inside mt-2 text-gray-700 pl-4">
+                      {exp.highlights.map((highlight, i) => (
+                        <li key={i}>{highlight}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Projects */}
+        {projects.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+              <span className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3 text-white print:bg-blue-700">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                  />
+                </svg>
+              </span>
+              Projects
+            </h2>
+            <div className="space-y-6 ml-11">
+              {projects.map((project, index) => (
+                <div 
+                  key={index} 
+                  className="bg-gray-50 rounded-lg p-4 print:bg-white print:border print:border-gray-200"
+                >
+                  <div className="flex flex-col md:flex-row md:items-baseline md:justify-between mb-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {project.name}
+                      </h3>
+                      {project.link && (
+                        <a 
+                          href={project.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 font-medium hover:underline"
+                        >
+                          View Project
+                        </a>
+                      )}
+                    </div>
+                    {(project.startDate || project.endDate) && (
+                      <div className="mt-1 md:mt-0 md:ml-4">
+                        <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                          {project.startDate && project.startDate} 
+                          {project.startDate && project.endDate && " - "} 
+                          {project.endDate && project.endDate}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {project.description && (
+                    <p className="text-gray-700 whitespace-pre-line mt-2">
+                      {project.description}
+                    </p>
+                  )}
+                  {project.technologies && project.technologies.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech, i) => (
+                          <span 
+                            key={i}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -212,6 +319,11 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
                         {edu.description}
                       </p>
                     )}
+                    {edu.gpa && (
+                      <p className="text-gray-700 text-sm mt-1">
+                        <span className="font-medium">GPA:</span> {edu.gpa}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -251,18 +363,16 @@ const ModernTemplate = ({ data }: ModernTemplateProps) => {
                       {skillCategory.category}
                     </h3>
                   )}
-                  {skillCategory.items?.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {skillCategory.items.map((skill, skillIndex) => (
-                        <span
-                          key={skillIndex}
-                          className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 border border-blue-200"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {skillCategory.items.map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

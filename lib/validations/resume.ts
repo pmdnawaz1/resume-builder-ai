@@ -5,17 +5,20 @@ const CHAR_LIMITS = {
   SUMMARY_MAX: 1000,
   EXPERIENCE_DESCRIPTION_MAX: 1000,
   EDUCATION_DESCRIPTION_MAX: 1000,
+  PROJECT_DESCRIPTION_MAX: 1000,
   SKILL_ITEM_MAX_LENGTH: 50,
   COMPANY_NAME_MAX: 100,
   SCHOOL_NAME_MAX: 100,
   JOB_TITLE_MAX: 100,
   DEGREE_MAX: 100,
   LOCATION_MAX: 100,
+  PROJECT_NAME_MAX: 100,
 };
 
 const COUNT_LIMITS = {
   EXPERIENCE_MAX: 4,
   EDUCATION_MAX: 3,
+  PROJECTS_MAX: 4,
   SKILLS_CATEGORY_MAX: 4,
   SKILLS_PER_CATEGORY_MAX: 10,
 };
@@ -83,6 +86,30 @@ const experienceItemSchema = z
     message: "End date is required unless this is your current position",
     path: ["endDate"],
   });
+
+// Schema for project items
+const projectItemSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Project name is required")
+    .max(
+      CHAR_LIMITS.PROJECT_NAME_MAX,
+      `Project name must be ${CHAR_LIMITS.PROJECT_NAME_MAX} characters or less`
+    ),
+  description: z
+    .string()
+    .max(
+      CHAR_LIMITS.PROJECT_DESCRIPTION_MAX,
+      `Description must be ${CHAR_LIMITS.PROJECT_DESCRIPTION_MAX} characters or less`
+    ),
+  technologies: z
+    .array(z.string())
+    .min(0)
+    .max(10, "Maximum 10 technologies to keep your resume concise"),
+  link: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
 
 // Schema for education items
 const educationItemSchema = z.object({
@@ -156,6 +183,14 @@ export const resumeSchema = z.object({
     .max(
       COUNT_LIMITS.EDUCATION_MAX,
       `Maximum ${COUNT_LIMITS.EDUCATION_MAX} education entries to ensure your resume fits on one page`
+    )
+    .default([]),
+  projects: z
+    .array(projectItemSchema)
+    .min(0)
+    .max(
+      COUNT_LIMITS.PROJECTS_MAX,
+      `Maximum ${COUNT_LIMITS.PROJECTS_MAX} projects to ensure your resume fits on one page`
     )
     .default([]),
   skills: z

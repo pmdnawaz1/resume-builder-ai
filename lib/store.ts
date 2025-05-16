@@ -34,6 +34,16 @@ const defaultResumeState: ResumeData = {
       gpa: '',
     },
   ],
+  projects: [
+    {
+      name: '',
+      description: '',
+      technologies: [],
+      link: '',
+      startDate: '',
+      endDate: '',
+    },
+  ],
   skills: [
     {
       category: '',

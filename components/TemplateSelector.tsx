@@ -8,11 +8,14 @@ import TechnicalTemplate from "./templates/TechnicalTemplate";
 import ProfessionalTemplate from "./templates/ProfessionalTemplate";
 import CreativeTemplate from "./templates/CreativeTemplate";
 import ExecutiveTemplate from "./templates/ExecutiveTemplate";
+import { RefObject } from "react";
 
 interface TemplateSelectorProps {
   data: ResumeData;
   onTemplateSelect: (template: string) => void;
   selectedTemplate: string;
+  customStyles?: React.CSSProperties;
+  templateRef?: RefObject<HTMLDivElement>;
 }
 
 const templates = [
@@ -64,6 +67,8 @@ export default function TemplateSelector({
   data,
   onTemplateSelect,
   selectedTemplate,
+  customStyles = {},
+  templateRef,
 }: TemplateSelectorProps) {
   const handleTemplateSelect = (templateId: string) => {
     onTemplateSelect(templateId);
@@ -96,7 +101,11 @@ export default function TemplateSelector({
         ))}
       </div>
 
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white">
+      <div 
+        ref={templateRef}
+        className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white"
+        style={customStyles}
+      >
         <SelectedTemplateComponent data={data} />
       </div>
     </div>
