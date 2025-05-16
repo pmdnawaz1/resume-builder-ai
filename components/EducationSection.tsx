@@ -3,14 +3,18 @@
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EducationErrors } from '@/types/errorTypes';
+import { ResumeData } from '@/types';
 
 export default function EducationSection() {
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+    control,
+  } = useFormContext<ResumeData>();
 
   const { fields, append, remove } = useFieldArray({
+    control,
     name: 'education',
   });
 
@@ -24,6 +28,7 @@ export default function EducationSection() {
             append({
               degree: '',
               school: '',
+              location: '',
               graduationDate: '',
               gpa: '',
             })
@@ -66,9 +71,9 @@ export default function EducationSection() {
                   className="input-field"
                   placeholder="Bachelor of Science in Computer Science"
                 />
-                {errors.education?.[index]?.degree && (
+                {(errors.education?.[index] as EducationErrors)?.degree && (
                   <p className="text-red-500 text-sm">
-                    {errors.education[index]?.degree?.message as string}
+                    {(errors.education?.[index] as EducationErrors)?.degree?.message}
                   </p>
                 )}
               </div>
@@ -80,9 +85,9 @@ export default function EducationSection() {
                   className="input-field"
                   placeholder="University Name"
                 />
-                {errors.education?.[index]?.school && (
+                {(errors.education?.[index] as EducationErrors)?.school && (
                   <p className="text-red-500 text-sm">
-                    {errors.education[index]?.school?.message as string}
+                    {(errors.education?.[index] as EducationErrors)?.school?.message}
                   </p>
                 )}
               </div>
@@ -96,9 +101,9 @@ export default function EducationSection() {
                   type="month"
                   className="input-field"
                 />
-                {errors.education?.[index]?.graduationDate && (
+                {(errors.education?.[index] as EducationErrors)?.graduationDate && (
                   <p className="text-red-500 text-sm">
-                    {errors.education[index]?.graduationDate?.message as string}
+                    {(errors.education?.[index] as EducationErrors)?.graduationDate?.message}
                   </p>
                 )}
               </div>
@@ -114,9 +119,9 @@ export default function EducationSection() {
                   min="0"
                   max="4"
                 />
-                {errors.education?.[index]?.gpa && (
+                {(errors.education?.[index] as EducationErrors)?.gpa && (
                   <p className="text-red-500 text-sm">
-                    {errors.education[index]?.gpa?.message as string}
+                    {(errors.education?.[index] as EducationErrors)?.gpa?.message}
                   </p>
                 )}
               </div>

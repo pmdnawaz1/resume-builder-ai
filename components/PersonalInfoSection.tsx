@@ -1,6 +1,7 @@
 'use client';
 
 import { useFormContext } from 'react-hook-form';
+import { PersonalInfoErrors } from '@/types/errorTypes';
 
 export default function PersonalInfoSection() {
   const {
@@ -19,9 +20,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="John Doe"
           />
-          {errors.personalInfo?.fullName && (
+          {(errors.personalInfo as PersonalInfoErrors)?.fullName && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.fullName.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.fullName?.message}
             </p>
           )}
         </div>
@@ -33,9 +34,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="Software Engineer"
           />
-          {errors.personalInfo?.jobTitle && (
+          {(errors.personalInfo as PersonalInfoErrors)?.jobTitle && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.jobTitle.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.jobTitle?.message}
             </p>
           )}
         </div>
@@ -48,9 +49,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="john.doe@example.com"
           />
-          {errors.personalInfo?.email && (
+          {(errors.personalInfo as PersonalInfoErrors)?.email && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.email.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.email?.message}
             </p>
           )}
         </div>
@@ -63,9 +64,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="(123) 456-7890"
           />
-          {errors.personalInfo?.phone && (
+          {(errors.personalInfo as PersonalInfoErrors)?.phone && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.phone.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.phone?.message}
             </p>
           )}
         </div>
@@ -77,9 +78,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="City, State"
           />
-          {errors.personalInfo?.location && (
+          {(errors.personalInfo as PersonalInfoErrors)?.location && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.location.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.location?.message}
             </p>
           )}
         </div>
@@ -92,9 +93,9 @@ export default function PersonalInfoSection() {
             className="input-field"
             placeholder="https://yourwebsite.com"
           />
-          {errors.personalInfo?.website && (
+          {(errors.personalInfo as PersonalInfoErrors)?.website && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.website.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.website?.message}
             </p>
           )}
         </div>
@@ -106,9 +107,9 @@ export default function PersonalInfoSection() {
             className="input-field min-h-[100px]"
             placeholder="A brief summary of your professional background and career objectives..."
           />
-          {errors.personalInfo?.summary && (
+          {(errors.personalInfo as PersonalInfoErrors)?.summary && (
             <p className="text-red-500 text-sm">
-              {errors.personalInfo.summary.message as string}
+              {(errors.personalInfo as PersonalInfoErrors)?.summary?.message}
             </p>
           )}
         </div>

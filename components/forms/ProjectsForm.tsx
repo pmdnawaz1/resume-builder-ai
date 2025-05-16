@@ -139,7 +139,7 @@ export default function ProjectsForm() {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Project Name */}
-              <Controller
+              <Controller<ResumeData>
                 name={`projects.${index}.name`}
                 control={control}
                 render={({ field }) => (
@@ -209,7 +209,7 @@ export default function ProjectsForm() {
                     render={({ field }) => (
                       <DatePicker
                         id={`projects.${index}.startDate`}
-                        selected={parseDate(field.value)}
+                        selected={parseDate(field.value || "")}
                         onChange={(date) => {
                           const formattedDate = formatDate(date);
                           field.onChange(formattedDate);
@@ -240,7 +240,7 @@ export default function ProjectsForm() {
                     render={({ field }) => (
                       <DatePicker
                         id={`projects.${index}.endDate`}
-                        selected={parseDate(field.value)}
+                        selected={parseDate(field.value || "")}
                         onChange={(date) => {
                           const formattedDate = formatDate(date);
                           field.onChange(formattedDate);

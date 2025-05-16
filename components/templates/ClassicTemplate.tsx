@@ -6,7 +6,7 @@ interface ClassicTemplateProps {
 
 const ClassicTemplate = ({ data }: ClassicTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],

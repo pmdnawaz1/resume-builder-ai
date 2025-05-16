@@ -6,7 +6,7 @@ interface ProfessionalTemplateProps {
 
 const ProfessionalTemplate = ({ data }: ProfessionalTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],

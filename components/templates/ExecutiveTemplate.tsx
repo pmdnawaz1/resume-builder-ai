@@ -6,7 +6,7 @@ interface ExecutiveTemplateProps {
 
 const ExecutiveTemplate = ({ data }: ExecutiveTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],

@@ -6,7 +6,7 @@ interface MinimalTemplateProps {
 
 const MinimalTemplate = ({ data }: MinimalTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],

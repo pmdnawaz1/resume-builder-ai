@@ -6,7 +6,7 @@ interface ModernTemplateProps {
 
 const ModernTemplate = ({ data }: ModernTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     projects = [],

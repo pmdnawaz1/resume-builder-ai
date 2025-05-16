@@ -2,23 +2,15 @@
 
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
-
-interface Experience {
-  title: string;
-  company: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-}
+import { ExperienceErrors } from '@/types/errorTypes';
+import { ResumeData } from '@/types';
 
 export default function ExperienceSection() {
   const {
     register,
     formState: { errors },
     control,
-  } = useFormContext();
+  } = useFormContext<ResumeData>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -70,9 +62,9 @@ export default function ExperienceSection() {
                   {...register(`experience.${index}.title`)}
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-                {errors.experience?.[index]?.title && (
+                {(errors.experience?.[index] as ExperienceErrors)?.title && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.experience[index].title.message}
+                    {(errors.experience?.[index] as ExperienceErrors)?.title?.message}
                   </p>
                 )}
               </div>
@@ -89,9 +81,9 @@ export default function ExperienceSection() {
                   {...register(`experience.${index}.company`)}
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-                {errors.experience?.[index]?.company && (
+                {(errors.experience?.[index] as ExperienceErrors)?.company && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.experience[index].company.message}
+                    {(errors.experience?.[index] as ExperienceErrors)?.company?.message}
                   </p>
                 )}
               </div>
@@ -108,9 +100,9 @@ export default function ExperienceSection() {
                   {...register(`experience.${index}.location`)}
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-                {errors.experience?.[index]?.location && (
+                {(errors.experience?.[index] as ExperienceErrors)?.location && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.experience[index].location.message}
+                    {(errors.experience?.[index] as ExperienceErrors)?.location?.message}
                   </p>
                 )}
               </div>
@@ -127,9 +119,9 @@ export default function ExperienceSection() {
                   {...register(`experience.${index}.startDate`)}
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-                {errors.experience?.[index]?.startDate && (
+                {(errors.experience?.[index] as ExperienceErrors)?.startDate && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.experience[index].startDate.message}
+                    {(errors.experience?.[index] as ExperienceErrors)?.startDate?.message}
                   </p>
                 )}
               </div>
@@ -161,9 +153,9 @@ export default function ExperienceSection() {
                   {...register(`experience.${index}.endDate`)}
                   className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-                {errors.experience?.[index]?.endDate && (
+                {(errors.experience?.[index] as ExperienceErrors)?.endDate && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.experience[index].endDate.message}
+                    {(errors.experience?.[index] as ExperienceErrors)?.endDate?.message}
                   </p>
                 )}
               </div>
@@ -182,9 +174,9 @@ export default function ExperienceSection() {
                 className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Describe your responsibilities and achievements..."
               />
-              {errors.experience?.[index]?.description && (
+              {(errors.experience?.[index] as ExperienceErrors)?.description && (
                 <p className="mt-1 text-sm text-red-600">
-                  {errors.experience[index].description.message}
+                  {(errors.experience?.[index] as ExperienceErrors)?.description?.message}
                 </p>
               )}
             </div>

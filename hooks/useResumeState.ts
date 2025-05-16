@@ -31,6 +31,14 @@ const defaultResumeState: ResumeData = {
       description: '',
     },
   ],
+  projects: [
+    {
+      name: '',
+      description: '',
+      link: '',
+      technologies: [],
+    },
+  ],
   skills: [
     {
       category: '',

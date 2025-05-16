@@ -6,7 +6,7 @@ interface CreativeTemplateProps {
 
 const CreativeTemplate = ({ data }: CreativeTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],

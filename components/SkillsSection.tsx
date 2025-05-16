@@ -3,6 +3,8 @@
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SkillsErrors } from '@/types/errorTypes';
+import { ResumeData } from '@/types';
 
 interface Skill {
   category: string;
@@ -13,9 +15,11 @@ export default function SkillsSection() {
   const {
     register,
     formState: { errors },
-  } = useFormContext();
+    control,
+  } = useFormContext<ResumeData>();
 
   const { fields, append, remove } = useFieldArray({
+    control,
     name: 'skills',
   });
 
@@ -56,9 +60,9 @@ export default function SkillsSection() {
                   className="input-field w-full"
                   placeholder="Programming Languages"
                 />
-                {errors.skills?.[index]?.category && (
+                {(errors.skills?.[index] as SkillsErrors)?.category && (
                   <p className="text-red-500 text-sm">
-                    {errors.skills[index]?.category?.message as string}
+                    {(errors.skills?.[index] as SkillsErrors)?.category?.message}
                   </p>
                 )}
               </div>
@@ -88,7 +92,6 @@ export default function SkillsSection() {
                       onClick={() => {
                         const items = [...(field as unknown as Skill).items];
                         items.splice(itemIndex, 1);
-                        // Update the field
                         const newField = {
                           ...field,
                           items,
@@ -107,7 +110,6 @@ export default function SkillsSection() {
                 type="button"
                 onClick={() => {
                   const items = [...(field as unknown as Skill).items, ''];
-                  // Update the field
                   const newField = {
                     ...field,
                     items,

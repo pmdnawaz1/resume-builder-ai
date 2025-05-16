@@ -6,7 +6,7 @@ interface TechnicalTemplateProps {
 
 const TechnicalTemplate = ({ data }: TechnicalTemplateProps) => {
   const {
-    personalInfo = {},
+    personalInfo = {} as ResumeData["personalInfo"],
     experience = [],
     education = [],
     skills = [],
