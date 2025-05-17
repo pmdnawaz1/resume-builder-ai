@@ -51,6 +51,12 @@ export default function Builder() {
 
   const { resumeData, updateResumeData } = useResumeStore();
 
+  const methods = useForm<ResumeData>({
+    resolver: zodResolver(resumeSchema),
+    defaultValues: resumeData,
+    mode: "all",
+  });
+
   // Populate the templates object only after client-side hydration
   useEffect(() => {
     // This will only run in the browser
@@ -64,23 +70,6 @@ export default function Builder() {
     
     setIsClient(true);
   }, []);
-
-  // Don't render anything until client-side hydration is complete
-  if (!isClient) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-pulse text-xl font-medium text-gray-700 dark:text-gray-300">
-          Loading Resume Builder...
-        </div>
-      </div>
-    );
-  }
-
-  const methods = useForm<ResumeData>({
-    resolver: zodResolver(resumeSchema),
-    defaultValues: resumeData,
-    mode: "all",
-  });
 
   // Update form when component mounts, not on every resumeData change
   const [initialReset, setInitialReset] = useState(false);
@@ -424,6 +413,17 @@ export default function Builder() {
       </div>
     );
   }
+
+    // Don't render anything until client-side hydration is complete
+    if (!isClient) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="animate-pulse text-xl font-medium text-gray-700 dark:text-gray-300">
+            Loading Resume Builder...
+          </div>
+        </div>
+      );
+    }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
