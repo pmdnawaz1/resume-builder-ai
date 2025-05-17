@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,27 +12,24 @@ import ExperienceForm from "@/components/forms/ExperienceForm";
 import EducationForm from "@/components/forms/EducationForm";
 import ProjectsForm from "@/components/forms/ProjectsForm";
 import SkillsForm from "@/components/forms/SkillsForm";
-import ResumePreview from "@/components/ResumePreview";
 import { ResumeData } from "@/types";
-import { generatePDFFromHTML } from "@/lib/generateHtmlPdf";
-import ClassicTemplate from "@/components/templates/ClassicTemplate";
-import ModernTemplate from "@/components/templates/ModernTemplate";
-import MinimalTemplate from "@/components/templates/MinimalTemplate";
-import TechnicalTemplate from "@/components/templates/TechnicalTemplate";
-import ProfessionalTemplate from "@/components/templates/ProfessionalTemplate";
-import CreativeTemplate from "@/components/templates/CreativeTemplate";
-import ExecutiveTemplate from "@/components/templates/ExecutiveTemplate";
 import { useResumeStore } from "@/lib/store";
 
-const templates = {
-  classic: ClassicTemplate,
-  modern: ModernTemplate,
-  minimal: MinimalTemplate,
-  technical: TechnicalTemplate,
-  professional: ProfessionalTemplate,
-  creative: CreativeTemplate,
-  executive: ExecutiveTemplate,
-};
+// Import dynamic components that might use browser APIs
+import dynamic from 'next/dynamic';
+
+// Dynamically import components with browser dependencies
+const ResumePreview = dynamic(() => import("@/components/ResumePreview"), { ssr: false });
+const ClassicTemplate = dynamic(() => import("@/components/templates/ClassicTemplate"), { ssr: false });
+const ModernTemplate = dynamic(() => import("@/components/templates/ModernTemplate"), { ssr: false });
+const MinimalTemplate = dynamic(() => import("@/components/templates/MinimalTemplate"), { ssr: false });
+const TechnicalTemplate = dynamic(() => import("@/components/templates/TechnicalTemplate"), { ssr: false });
+const ProfessionalTemplate = dynamic(() => import("@/components/templates/ProfessionalTemplate"), { ssr: false });
+const CreativeTemplate = dynamic(() => import("@/components/templates/CreativeTemplate"), { ssr: false });
+const ExecutiveTemplate = dynamic(() => import("@/components/templates/ExecutiveTemplate"), { ssr: false });
+
+// Create templates object that will be populated after client-side rendering
+const templates: Record<string, any> = {};
 
 const formSteps = [
   { id: "personal", title: "Personal Info", component: PersonalInfoForm },
@@ -50,12 +47,34 @@ export default function Builder() {
   const [showDebug, setShowDebug] = useState(false);
   const [isStepValid, setIsStepValid] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  const {
-    resumeData,
-    updateResumeData,
-    clearResumeData,
-  } = useResumeStore();
+  const { resumeData, updateResumeData } = useResumeStore();
+
+  // Populate the templates object only after client-side hydration
+  useEffect(() => {
+    // This will only run in the browser
+    templates.classic = ClassicTemplate;
+    templates.modern = ModernTemplate;
+    templates.minimal = MinimalTemplate;
+    templates.technical = TechnicalTemplate;
+    templates.professional = ProfessionalTemplate;
+    templates.creative = CreativeTemplate;
+    templates.executive = ExecutiveTemplate;
+    
+    setIsClient(true);
+  }, []);
+
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-pulse text-xl font-medium text-gray-700 dark:text-gray-300">
+          Loading Resume Builder...
+        </div>
+      </div>
+    );
+  }
 
   const methods = useForm<ResumeData>({
     resolver: zodResolver(resumeSchema),
@@ -72,7 +91,7 @@ export default function Builder() {
       if (!initialReset) {
         // Wait a small delay to ensure localStorage is fully hydrated
         setTimeout(() => {
-      methods.reset(resumeData);
+          methods.reset(resumeData);
           setInitialReset(true);
           console.log("Form reset with hydrated data:", resumeData);
         }, 100);
@@ -80,7 +99,7 @@ export default function Builder() {
     };
     
     resetFormWithHydratedData();
-  }, [resumeData]);
+  }, [resumeData, methods, initialReset]);
   
   // Use a separate effect with deep comparison to reset only on meaningful changes
   useEffect(() => {
@@ -162,26 +181,26 @@ export default function Builder() {
       console.log("Is last step:", isLastStep);
 
       // If this is the last step and it's valid, show preview
-    if (isLastStep) {
+      if (isLastStep) {
         console.log("Last step, validating entire form");
-      const formValid = await trigger();
+        const formValid = await trigger();
         console.log("Form valid:", formValid);
         
-      if (!formValid) {
-        const errorMessages = Object.entries(errors)
+        if (!formValid) {
+          const errorMessages = Object.entries(errors)
             .map(([key, value]: [string, any]) => {
               console.log("Error key:", key);
-            if (typeof value === "object" && value !== null) {
-              return Object.values(value)
-                .map((err: any) => err?.message)
-                .filter(Boolean)
-                .join(", ");
-            }
-            return value?.message;
-          })
-          .filter(Boolean);
+              if (typeof value === "object" && value !== null) {
+                return Object.values(value)
+                  .map((err: any) => err?.message)
+                  .filter(Boolean)
+                  .join(", ");
+              }
+              return value?.message;
+            })
+            .filter(Boolean);
 
-        toast.error(
+          toast.error(
             `Please fix the following errors: ${errorMessages.join(", ")}`,
             {
               duration: 4000,
@@ -212,8 +231,6 @@ export default function Builder() {
   const handleDownloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
-      // The actual PDF generation will be handled in the ResumePreview component
-      // using the templateRef and html2pdf
       toast.success("Resume downloading...");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -339,9 +356,11 @@ export default function Builder() {
 
   // Add debug function to check localStorage
   const checkLocalStorage = () => {
-    const storedData = localStorage.getItem('resume-storage');
-    console.log('LocalStorage data:', storedData ? JSON.parse(storedData) : 'No data found');
-    setShowDebug(!showDebug);
+    if (typeof window !== 'undefined') {
+      const storedData = localStorage.getItem('resume-storage');
+      console.log('LocalStorage data:', storedData ? JSON.parse(storedData) : 'No data found');
+      setShowDebug(!showDebug);
+    }
   };
 
   // Add effect to validate the current step when it changes
@@ -388,6 +407,7 @@ export default function Builder() {
     console.log("Available templates:", Object.keys(templates));
     console.log("Form data:", formData);
     
+    // We're dynamically importing ResumePreview component
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -552,7 +572,7 @@ export default function Builder() {
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm space-y-6">
               {/* Template Selector */}
               <div className="flex flex-wrap gap-2 mb-4">
-                {Object.entries(templates).map(([id, _]) => (
+                {Object.keys(templates).map((id) => (
                   <button
                     key={id}
                     onClick={() => handleTemplateSelect(id)}
@@ -569,13 +589,13 @@ export default function Builder() {
 
               {/* Live Template Preview */}
               <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transform scale-[0.6] origin-top">
-                {formData &&
-                  formData.personalInfo &&
-                  (() => {
-                    const SelectedTemplate =
-                      templates[selectedTemplate as keyof typeof templates];
-                    return <SelectedTemplate data={formData} />;
-                  })()}
+                {formData && formData.personalInfo && templates[selectedTemplate] ? (
+                  React.createElement(templates[selectedTemplate], { data: formData })
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    Loading template...
+                  </div>
+                )}
               </div>
             </div>
           </div>

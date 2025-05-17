@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import { parse as parsePdf } from 'pdf-parse';
-import { Document } from 'docx';
+import * as pdfLib from 'pdf-parse/lib/pdf-parse.js';
+
+// Custom implementation to avoid dependency on test files
+async function parsePdf(dataBuffer) {
+  try {
+    // Use the pdf-lib directly, bypassing the test file loading
+    return await pdfLib.default(dataBuffer);
+  } catch (error) {
+    console.error('Error in PDF parsing:', error);
+    throw new Error('Failed to parse PDF content');
+  }
+}
 
 export async function POST(request) {
   try {
@@ -22,15 +32,9 @@ export async function POST(request) {
       const pdfData = await parsePdf(Buffer.from(buffer));
       text = pdfData.text;
     } else if (file.name.endsWith('.docx')) {
-      const doc = new Document(buffer);
-      // Extract text from docx
-      text = await new Promise((resolve) => {
-        let content = '';
-        doc.getParagraphs().forEach((p) => {
-          content += p.text + '\\n';
-        });
-        resolve(content);
-      });
+      const mammoth = await import('mammoth');
+      const result = await mammoth.convertToPlainText({ buffer: Buffer.from(buffer) });
+      text = result.value;
     } else {
       return NextResponse.json(
         { error: 'Unsupported file format' },
@@ -68,7 +72,7 @@ export async function POST(request) {
 // Helper functions for parsing
 function extractName(text) {
   // Basic name extraction - first line or first capitalized words
-  const firstLine = text.split('\\n')[0].trim();
+  const firstLine = text.split('\n')[0].trim();
   return firstLine;
 }
 
@@ -107,7 +111,7 @@ function extractSkills(text) {
 function extractExperience(text) {
   // Basic experience extraction - look for job titles and dates
   const experiences = [];
-  const lines = text.split('\\n');
+  const lines = text.split('\n');
   let currentExp = null;
 
   const jobTitles = [
@@ -153,7 +157,7 @@ function extractEducation(text) {
     'Associate', 'Diploma'
   ];
 
-  const lines = text.split('\\n');
+  const lines = text.split('\n');
   let currentEdu = null;
 
   lines.forEach(line => {

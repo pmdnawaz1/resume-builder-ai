@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { generatePdf } from '@/lib/generatePdf';
+import { generatePDF } from '@/lib/generatePdf';
 
 export async function POST(request) {
   try {
     const data = await request.json();
-    const pdfBuffer = await generatePdf(data);
+    const pdfBuffer = await generatePDF(data);
 
     return new NextResponse(pdfBuffer, {
       status: 200,
